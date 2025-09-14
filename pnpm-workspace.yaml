@@ -3,3 +3,4 @@ onlyBuiltDependencies:
 
 overrides:
   '@shared/backend': link:../../../shared/shared-backend
+  shared: link:../budget-shared

@@ -8,7 +8,6 @@ import cookieParser from "cookie-parser";
 import {
 	getAppName,
 	getPresetType,
-	initApi,
 	initSSG,
 	initSSR,
 	initDatabases,
@@ -46,7 +45,6 @@ export const server = async () => {
 	app.use(express.json());
 
 	// API
-	initApi(app);
 	initRouter(app, [...sharedControllers, ApiController]);
 
 	// GET pages
