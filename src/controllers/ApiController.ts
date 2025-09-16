@@ -6,8 +6,9 @@ import {
 	type Request,
 	type Response,
 	Controller,
-	TokenService,
 	POST,
+	RequireXHR,
+	RequireAuth,
 } from "@shared/backend";
 import { UsersRepository } from "../repositories";
 import type { Account } from "shared";
@@ -17,42 +18,20 @@ import cryptoCurrencies from "../cryptoCurrencies.json" assert { type: "json" };
 const accounts: Account[] = [];
 
 @Router("/api")
+@RequireXHR()
+@RequireAuth()
 export class ApiController extends Controller {
 	@Method(GET, "/user")
 	async getUser(req: Request, res: Response) {
-		if (!req.xhr) {
-			return res.sendStatus(400);
-		}
-
-		const { at: accessToken } = req.cookies;
-		const { id } = await TokenService.verify(accessToken);
-
-		if (!id) {
-			return res.sendStatus(401);
-		}
-
 		const {
 			rows: [user],
-		} = await UsersRepository.getUserByLogin(id);
+		} = await UsersRepository.getUserByLogin(req.userId);
 
 		return res.send(user);
 	}
 
 	@Method(GET, "/accounts")
 	async getAccounts(req: Request, res: Response) {
-		if (!req.xhr) {
-			res.sendStatus(400);
-			return;
-		}
-
-		const { at: accessToken } = req.cookies;
-		const { id } = await TokenService.verify(accessToken);
-
-		if (!id) {
-			res.sendStatus(401);
-			return;
-		}
-
 		return res.send(accounts);
 	}
 
