@@ -9,6 +9,7 @@ import {
 	POST,
 	RequireXHR,
 	RequireAuth,
+	PATCH,
 } from "@shared/backend";
 import { UsersRepository } from "../repositories";
 import type { Account } from "shared";
@@ -72,5 +73,15 @@ export class ApiController extends Controller {
 		accounts.push(newAccount);
 
 		return res.status(201).send(newAccount);
+	}
+
+	@Method(PATCH, "/accounts")
+	async editAccount(req: Request, res: Response) {
+		const account: Account = req.body;
+		const index = accounts.findIndex(({ id }) => id === account.id);
+
+		accounts.splice(index, 1, account);
+
+		return res.sendStatus(200);
 	}
 }
