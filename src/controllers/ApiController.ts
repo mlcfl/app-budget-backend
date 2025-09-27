@@ -10,6 +10,7 @@ import {
 	RequireXHR,
 	RequireAuth,
 	PATCH,
+	DELETE,
 } from "@shared/backend";
 import { UsersRepository } from "../repositories";
 import type { Account } from "shared";
@@ -81,6 +82,16 @@ export class ApiController extends Controller {
 		const index = accounts.findIndex(({ id }) => id === account.id);
 
 		accounts.splice(index, 1, account);
+
+		return res.sendStatus(200);
+	}
+
+	@Method(DELETE, "/accounts/:id")
+	async removeAccount(req: Request, res: Response) {
+		const accountId: string = req.params.id;
+		const index = accounts.findIndex(({ id }) => id === accountId);
+
+		accounts.splice(index, 1);
 
 		return res.sendStatus(200);
 	}
