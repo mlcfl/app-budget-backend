@@ -5,6 +5,7 @@ import express, {
 	type NextFunction,
 } from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { initDatabases } from "./utils";
 import {
 	initRouter,
@@ -40,6 +41,23 @@ export const server = async () => {
 	await initDatabases();
 
 	const app = express();
+
+	// CORS configuration
+	if (process.env.CORS_ENABLED === "true") {
+		const origin = process.env.CORS_ORIGIN;
+
+		if (!origin) {
+			throw new Error("CORS is enabled, but CORS_ORIGIN is not set");
+		}
+
+		app.use(
+			cors({
+				origin,
+				methods: ["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
+				credentials: true,
+			})
+		);
+	}
 
 	app.use(cookieParser());
 	app.use(express.json());

@@ -7,12 +7,13 @@
 	"type": "module",
 	"main": "dist/index.js",
 	"scripts": {
-		"start": "node dist/index.js",
-		"dev": "tsx watch ./src/index.ts --",
-		"build": "tsx esbuild.config.ts"
+		"start": "node --env-file=.env.production dist/index.js",
+		"dev": "tsx watch --env-file=.env.development ./src/index.ts --",
+		"build": "tsx --env-file=.env.production esbuild.config.ts"
 	},
 	"devDependencies": {
 		"@types/cookie-parser": "^1.4.8",
+		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.1",
 		"@types/jsonwebtoken": "^9.0.9",
 		"@types/node": "^22.14.0",
@@ -24,7 +25,7 @@
 	"dependencies": {
 		"@shared/backend": "link:../../../shared/shared-backend",
 		"cookie-parser": "^1.4.7",
-		"dotenv": "^16.4.7",
+		"cors": "^2.8.5",
 		"express": "^5.1.0",
 		"jsonwebtoken": "^9.0.2",
 		"mongodb": "^6.15.0",
