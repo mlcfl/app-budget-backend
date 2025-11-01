@@ -11,13 +11,18 @@ import {
 	RequireAuth,
 	PATCH,
 	DELETE,
+	PUT,
 } from "@shared/backend";
 import { UsersRepository } from "../repositories";
-import type { Account } from "shared";
+import type { Account, Category } from "shared";
 import currencies from "../currencies.json" assert { type: "json" };
 import cryptoCurrencies from "../cryptoCurrencies.json" assert { type: "json" };
 
 const accounts: Account[] = [];
+const categories: { incomes: Category[]; expenses: Category[] } = {
+	incomes: [],
+	expenses: [],
+};
 
 @Router("/api")
 @RequireXHR()
@@ -92,6 +97,44 @@ export class ApiController extends Controller {
 		const index = accounts.findIndex(({ id }) => id === accountId);
 
 		accounts.splice(index, 1);
+
+		return res.sendStatus(200);
+	}
+
+	@Method(GET, "/categories")
+	async getCategories(req: Request, res: Response) {
+		return res.send(categories);
+	}
+
+	@Method(POST, "/categories")
+	async addCategory(req: Request, res: Response) {
+		const newCategory: Category = {
+			id: randomUUID(),
+			title: req.body.title,
+		};
+
+		categories[req.body.type as "incomes" | "expenses"].push(newCategory);
+
+		return res.status(201).send(newCategory);
+	}
+
+	@Method(DELETE, "/categories/:type/:id")
+	async removeCategory(req: Request, res: Response) {
+		const type = req.params.type as "incomes" | "expenses";
+		const categoryId = req.params.id;
+		const index = categories[type].findIndex(({ id }) => id === categoryId);
+
+		categories[type].splice(index, 1);
+
+		return res.sendStatus(200);
+	}
+
+	@Method(PUT, "/categories/:type")
+	async replaceCategories(req: Request, res: Response) {
+		const type = req.params.type as "incomes" | "expenses";
+		const list = req.body.list;
+
+		categories[type] = list;
 
 		return res.sendStatus(200);
 	}
