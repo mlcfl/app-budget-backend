@@ -7,9 +7,9 @@
 	"type": "module",
 	"main": "dist/index.js",
 	"scripts": {
-		"start": "node --env-file=.env.production dist/index.js",
 		"dev": "tsx watch --env-file=.env.development ./src/index.ts --",
-		"build": "tsx --env-file=.env.production esbuild.config.ts"
+		"build": "tsx --env-file=.env.production esbuild.config.ts",
+		"start": "node --env-file=.env.production dist/index.js"
 	},
 	"devDependencies": {
 		"@types/cookie-parser": "^1.4.8",
