@@ -1,18 +1,15 @@
 import { randomUUID } from "node:crypto";
 import {
-	Router,
-	Method,
-	GET,
-	type Request,
-	type Response,
 	Controller,
-	POST,
-	RequireXHR,
-	RequireAuth,
-	PATCH,
-	DELETE,
-	PUT,
-} from "@shared/backend";
+	Delete,
+	Get,
+	Patch,
+	Post,
+	Put,
+	Req,
+	Res,
+} from "@nestjs/common";
+import type { Request, Response } from "express";
 import { UsersRepository } from "../repositories";
 import type { Account, Category } from "shared";
 import currencies from "../currencies.json" assert { type: "json" };
@@ -24,24 +21,22 @@ const categories: { incomes: Category[]; expenses: Category[] } = {
 	expenses: [],
 };
 
-@Router("/api")
-@RequireXHR()
-@RequireAuth()
-export class ApiController extends Controller {
-	@Method(GET, "/user")
-	async getUser(req: Request, res: Response) {
-		const user = await UsersRepository.getUserByLogin(req.userId);
+@Controller("api")
+export class ApiController {
+	@Get("user")
+	async getUser(@Req() req: Request, @Res() res: Response) {
+		const user = await UsersRepository.getUserByLogin((req as any).userId);
 
 		return res.send(user);
 	}
 
-	@Method(GET, "/accounts")
-	async getAccounts(req: Request, res: Response) {
+	@Get("accounts")
+	async getAccounts(@Req() _req: Request, @Res() res: Response) {
 		return res.send(accounts);
 	}
 
-	@Method(GET, "/currencies")
-	async getCurrencies(req: Request, res: Response) {
+	@Get("currencies")
+	async getCurrencies(@Req() _req: Request, @Res() res: Response) {
 		// https://gist.github.com/ksafranski/2973986
 		const list = Object.entries(currencies).map(([key]) => key);
 
@@ -51,15 +46,15 @@ export class ApiController extends Controller {
 		});
 	}
 
-	@Method(GET, "/account-types")
-	async getAccountTypes(req: Request, res: Response) {
+	@Get("account-types")
+	async getAccountTypes(@Req() _req: Request, @Res() res: Response) {
 		const types = ["cash", "card", "crypto", "other"];
 
 		return res.send(types);
 	}
 
-	@Method(POST, "/accounts")
-	async addAccount(req: Request, res: Response) {
+	@Post("accounts")
+	async addAccount(@Req() req: Request, @Res() res: Response) {
 		const newAccount: Account = {
 			id: randomUUID(),
 			name: req.body.name,
@@ -79,8 +74,8 @@ export class ApiController extends Controller {
 		return res.status(201).send(newAccount);
 	}
 
-	@Method(PATCH, "/accounts")
-	async editAccount(req: Request, res: Response) {
+	@Patch("accounts")
+	async editAccount(@Req() req: Request, @Res() res: Response) {
 		const account: Account = req.body;
 		const index = accounts.findIndex(({ id }) => id === account.id);
 
@@ -89,8 +84,8 @@ export class ApiController extends Controller {
 		return res.sendStatus(200);
 	}
 
-	@Method(DELETE, "/accounts/:id")
-	async removeAccount(req: Request, res: Response) {
+	@Delete("accounts/:id")
+	async removeAccount(@Req() req: Request, @Res() res: Response) {
 		const accountId: string = req.params.id;
 		const index = accounts.findIndex(({ id }) => id === accountId);
 
@@ -99,13 +94,13 @@ export class ApiController extends Controller {
 		return res.sendStatus(200);
 	}
 
-	@Method(GET, "/categories")
-	async getCategories(req: Request, res: Response) {
+	@Get("categories")
+	async getCategories(@Req() _req: Request, @Res() res: Response) {
 		return res.send(categories);
 	}
 
-	@Method(POST, "/categories")
-	async addCategory(req: Request, res: Response) {
+	@Post("categories")
+	async addCategory(@Req() req: Request, @Res() res: Response) {
 		const newCategory: Category = {
 			id: randomUUID(),
 			title: req.body.title,
@@ -116,8 +111,8 @@ export class ApiController extends Controller {
 		return res.status(201).send(newCategory);
 	}
 
-	@Method(DELETE, "/categories/:type/:id")
-	async removeCategory(req: Request, res: Response) {
+	@Delete("categories/:type/:id")
+	async removeCategory(@Req() req: Request, @Res() res: Response) {
 		const type = req.params.type as "incomes" | "expenses";
 		const categoryId = req.params.id;
 		const index = categories[type].findIndex(({ id }) => id === categoryId);
@@ -127,8 +122,8 @@ export class ApiController extends Controller {
 		return res.sendStatus(200);
 	}
 
-	@Method(PUT, "/categories/:type")
-	async replaceCategories(req: Request, res: Response) {
+	@Put("categories/:type")
+	async replaceCategories(@Req() req: Request, @Res() res: Response) {
 		const type = req.params.type as "incomes" | "expenses";
 		const list = req.body.list;
 

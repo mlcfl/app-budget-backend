@@ -13,8 +13,7 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"verbatimModuleSyntax": true,
-		"experimentalDecorators": false,
-		"emitDecoratorMetadata": false
+		"experimentalDecorators": true
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules"]

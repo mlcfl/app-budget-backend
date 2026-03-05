@@ -1,27 +1,19 @@
 import { resolve } from "node:path";
-import express, {
-	type Request,
-	type Response,
-	type NextFunction,
-} from "express";
+import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import cookieParser from "cookie-parser";
-import cors from "cors";
+import type { Request, Response, NextFunction } from "express";
 import { initDatabases } from "./utils";
-import {
-	initRouter,
-	TokenService,
-	getAppName,
-	initHTMLPagesRender,
-} from "@shared/backend";
-import { ApiController } from "./controllers";
+import { TokenService, getAppName, initHTMLPagesRender } from "@shared/backend";
 import packageJson from "../package.json" assert { type: "json" };
+import { AppModule } from "./app.module";
 import type { AppConfig } from "./types";
 
 const errorHandler = (
 	error: unknown,
-	req: Request,
+	_req: Request,
 	res: Response,
-	next: NextFunction
+	_next: NextFunction,
 ): void => {
 	if (res.headersSent) {
 		return;
@@ -35,12 +27,13 @@ export const server = async (appConfig?: AppConfig) => {
 	const appName = getAppName(packageJson);
 	const frontendRoot = resolve(
 		import.meta.dirname,
-		`../../${appName}-frontend`
+		`../../${appName}-frontend`,
 	);
 
 	await initDatabases(appConfig);
 
-	const app = express();
+	const nestApp = await NestFactory.create<NestExpressApplication>(AppModule);
+	const expressApp = nestApp.getHttpAdapter().getInstance();
 
 	// CORS configuration
 	if (process.env.CORS_ENABLED === "true") {
@@ -50,23 +43,37 @@ export const server = async (appConfig?: AppConfig) => {
 			throw new Error("CORS is enabled, but CORS_ORIGIN is not set");
 		}
 
-		app.use(
-			cors({
-				origin,
-				methods: ["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
-				credentials: true,
-			})
-		);
+		nestApp.enableCors({
+			origin,
+			methods: ["OPTIONS", "GET", "POST", "PUT", "PATCH", "DELETE"],
+			credentials: true,
+		});
 	}
 
-	app.use(cookieParser());
-	app.use(express.json());
+	nestApp.use(cookieParser());
 
-	// API
-	initRouter(app, [ApiController]);
+	// API auth middleware
+	nestApp.use(
+		"/api",
+		async (req: Request, res: Response, next: NextFunction) => {
+			if (!req.xhr) {
+				return res.sendStatus(400);
+			}
 
-	// GET pages
-	app.use(async (req, res, next) => {
+			const { at: accessToken } = req.cookies;
+			const { id } = await TokenService.verify(accessToken);
+
+			if (!id) {
+				return res.sendStatus(401);
+			}
+
+			(req as any).userId = id;
+			next();
+		},
+	);
+
+	// GET pages auth middleware
+	nestApp.use(async (req: Request, res: Response, next: NextFunction) => {
 		// Do not check token for !GET requests
 		if (req.method !== "GET") {
 			return next();
@@ -76,7 +83,7 @@ export const server = async (appConfig?: AppConfig) => {
 		const assets =
 			/\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|map|webp|json)$/;
 		const assetsPath = /^\/(?:_nuxt|assets|static|api)/;
-		const { protocol, originalUrl: url } = req;
+		const { originalUrl: url } = req;
 
 		if (assetsPath.test(url) || assets.test(url)) {
 			return next();
@@ -84,42 +91,28 @@ export const server = async (appConfig?: AppConfig) => {
 
 		const { at: accessToken } = req.cookies;
 
-		const host = req.get("host");
-		const fullUrl = encodeURIComponent(`${protocol}://${host}${url}`);
-		const uri = `http://auth.mlc.local:3000/api/refresh-token?to=${fullUrl}`;
-
-		// Check auth service
-		try {
-			const { status } = await fetch("http://auth.mlc.local:3000/api/ping");
-
-			if (status !== 200) {
-				res.sendStatus(403);
-				return;
-			}
-		} catch (e) {
-			res.sendStatus(403);
-			return;
-		}
-
 		// No accessToken cookie
 		if (!accessToken) {
-			return res.redirect(uri);
+			res.sendStatus(403);
+			return;
 		}
 
 		const { id } = await TokenService.verify(accessToken);
 
 		// Invalid accessToken
 		if (!id) {
-			return res.redirect(uri);
+			res.sendStatus(403);
+			return;
 		}
 
 		next();
 	});
 
-	// HTML pages
-	await initHTMLPagesRender(app, frontendRoot);
+	await initHTMLPagesRender(expressApp, frontendRoot);
 
-	app.use(errorHandler);
+	await nestApp.init();
 
-	return app;
+	expressApp.use(errorHandler);
+
+	return expressApp;
 };

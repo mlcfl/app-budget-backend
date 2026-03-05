@@ -1,4 +1,3 @@
-import { Repository } from "@shared/backend";
 import { Postgres } from "../lib";
 import type { Prisma } from "../generated/postgres/client";
 
@@ -9,7 +8,7 @@ type User = Prisma.UsersGetPayload<{
 	};
 }>;
 
-export class UsersRepository extends Repository {
+export class UsersRepository {
 	static async getUserByLogin(login: string): Promise<User | null> {
 		return Postgres.users.findFirst({
 			where: { login },
