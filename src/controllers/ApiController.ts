@@ -30,9 +30,7 @@ const categories: { incomes: Category[]; expenses: Category[] } = {
 export class ApiController extends Controller {
 	@Method(GET, "/user")
 	async getUser(req: Request, res: Response) {
-		const {
-			rows: [user],
-		} = await UsersRepository.getUserByLogin(req.userId);
+		const user = await UsersRepository.getUserByLogin(req.userId);
 
 		return res.send(user);
 	}

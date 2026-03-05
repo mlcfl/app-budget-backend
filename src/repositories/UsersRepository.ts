@@ -1,15 +1,22 @@
 import { Repository } from "@shared/backend";
+import { Postgres } from "../lib";
+import type { Prisma } from "../generated/postgres/client";
 
-type User = {
-	uid: string;
-	login: string;
-};
+type User = Prisma.UsersGetPayload<{
+	select: {
+		uid: true;
+		login: true;
+	};
+}>;
 
 export class UsersRepository extends Repository {
-	static async getUserByLogin(login: string): Promise<{ rows: User[] }> {
-		return this.postgres.query(
-			'SELECT "uid", "login" FROM users WHERE login = $1 LIMIT 1',
-			[login]
-		);
+	static async getUserByLogin(login: string): Promise<User | null> {
+		return Postgres.users.findFirst({
+			where: { login },
+			select: {
+				uid: true,
+				login: true,
+			},
+		});
 	}
 }

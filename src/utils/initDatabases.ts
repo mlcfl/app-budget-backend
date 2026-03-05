@@ -1,25 +1,11 @@
-import { Memory, MemoryKeys, Postgres, Mongo } from "@shared/backend";
+import { Postgres, initPostgres } from "../lib";
+import type { AppConfig } from "../types";
 
-export const initDatabases = async () => {
-	const env = process.env as any;
-
-	const postgres = new Postgres({
-		user: env.PGUSER,
-		password: env.PGPASSWORD,
-		host: env.PGHOST,
-		database: env.PGDATABASE,
-		port: env.PGPORT,
-	});
-
-	const mongo = new Mongo(env.MONGO_CONNECTION_STRING);
-	await mongo.connect();
-
-	Memory.set(MemoryKeys.Postgres, postgres);
-	Memory.set(MemoryKeys.Mongo, mongo);
+export const initDatabases = async (appConfig?: AppConfig) => {
+	await initPostgres(appConfig);
 
 	process.on("SIGINT", async () => {
-		await postgres.pool.end();
-		await mongo.disconnect();
+		await Postgres.$disconnect();
 		process.exit(0);
 	});
 };

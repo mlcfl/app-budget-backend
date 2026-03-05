@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client"
+  output = "../../src/generated/sqlite"
+}
+
+datasource db {
+  provider = "sqlite"
+  // For prisma 6.19 url is required
+  // Error here is ok and couldn't be fixed
+  url = env("PG_DATABASE_URL")
+}
+
+// Key derivation function types
+enum KdfTypes {
+  BCRYPT
+  SCRYPT
+  ARGON2ID
+}
+
+// Users table
+model Users {
+  id              Int       @id @default(autoincrement())
+  uid             String    @unique
+  login           String    @unique
+  password        Json
+  passwordKdfType KdfTypes
+  pepperVersion   Int
+  createdDate     DateTime
+  agreements      Json
+}
